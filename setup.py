@@ -10,7 +10,7 @@ def long_description():
 
 setup(
     name = 'sevencow',
-    version = '0.1.2',
+    version = '0.1.3',
     license = 'BSD',
     install_requires = ['requests'],
     py_modules = ['sevencow'],

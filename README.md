@@ -2,7 +2,8 @@
 
 另一个七牛云存储Python SDK
 
-此SDK目标是更容易的使用，完整功能的SDK请见 ![官方SDK](https://github.com/qiniu/python-sdk)
+此SDK目标是更容易的使用，完整功能的SDK请见
+[![官方SDK](http://qiniutek.com/images/logo-2.png)](https://github.com/qiniu/python-sdk)
 
 ## Install
 
@@ -56,7 +57,7 @@ b.delete('a')               # 删除单个文件
 b.delete('a', 'b', 'c')     # 批量删除
 ```
 
-默认情况下put上传是使用文件本身的名字作为上传后的名字(也就是在bucket中key)，
+默认情况下put上传会使用文件本身哈希值作为上传后的名字(也就是在bucket中的key)，
 但你也可以给put方法加一个`names`关键字参数来指定文件上传后应该是什么名字。
 
 ```python
@@ -92,7 +93,6 @@ try:
 except CowException as e:
     print e.url         # 出错的url
     print e.status_code # 返回码
-    print e.reason      # http error的原因
     print e.content     # api 错误的原因
 ```
 

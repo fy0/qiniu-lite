@@ -3,15 +3,46 @@
 import os
 import hmac
 import time
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 import mimetypes
 import functools
-from urlparse import urlparse
-from urllib import urlencode
-from base64 import urlsafe_b64encode
+
+try:
+    from urlparse import urlparse  # py2
+    from urllib import urlencode
+except ImportError:
+    from urllib.parse import urlparse # py3
+    from urllib.parse import urlencode
+
 from hashlib import sha1
 
 import requests
+
+import sys
+if sys.version > '3':
+    basestring = str
+    from base64 import urlsafe_b64encode as _urlsafe_b64encode
+    
+    def urlsafe_b64encode(data):
+        if type(data) == str:
+            data = bytes(data, 'utf-8')
+        return str(_urlsafe_b64encode(data), 'utf-8')
+
+    from hmac import new as _hmac_new
+
+    def hmac_new(key, msg, digestmod):
+        if type(key) == 'str':
+            key = bytes(data, 'utf-8')
+            
+        if type(msg) == 'str':
+            msg = bytes(data, 'utf-8')
+        return _hmac_new('')
+
+else:
+    from base64 import urlsafe_b64encode
 
 version_info = (0, 1, 2)
 VERSION = __version__ = '.'.join( map(str, version_info) )
@@ -43,19 +74,31 @@ RSF_HOST = 'http://rsf.qbox.me'
 
 
 class CowException(Exception):
-    def __init__(self, url, status_code, reason, content):
+    def __init__(self, url, status_code, content):
         self.url = url
         self.status_code = status_code
-        self.reason = reason
         self.content = content
-        Exception.__init__(self, '%s, %s' % (reason, content))
+        Exception.__init__(self, '%s' % content)
 
 
 
 def signing(secret_key, data):
-    return urlsafe_b64encode(
-        hmac.new(secret_key, data, sha1).digest()
-    )
+    try:
+        return urlsafe_b64encode(
+            hmac.new(secret_key, data, sha1).digest()
+        )
+    except:
+        if type(secret_key) == str:
+            secret_key = bytes(secret_key, 'ascii')
+ 
+        if type(data) == str:
+            data = bytes(data, 'utf-8')
+
+        return urlsafe_b64encode(
+            hmac.new(secret_key, data, sha1).digest()
+        )
+
+    
 
 def requests_error_handler(func):
     @functools.wraps(func)
@@ -65,7 +108,7 @@ def requests_error_handler(func):
         except AssertionError as e:
             req = e.args[0]
             raise CowException(
-                    req.url, req.status_code, req.reason, req.content
+                    req.url, req.status_code, req.text
                 )
     return deco
 
@@ -160,7 +203,7 @@ class Cow(object):
         else:
             res = requests.post(url, headers=self.build_requests_headers(token))
         assert res.status_code == 200, res
-        return res.json() if res.text else ''
+        return json.loads(res.text) if res.text else ''
 
 
     def list_buckets(self):
@@ -205,13 +248,13 @@ class Cow(object):
 
     @requests_error_handler
     @expected_argument_type(2, (basestring, list, tuple))
-    def put(self, scope, filename, names=None):
+    def put(self, scope, filename, names=None, use_key_as_name=True):
         """上传文件
         filename 如果是字符串，表示上传单个文件，
         如果是list或者tuple，表示上传多个文件
 
         names 是dict，key为filename, value为上传后的名字
-        如果不设置，默认为文件名
+        如果不设置，默认为Hash值
         """
         url = '%s/upload' % UP_HOST
         token = self.generate_upload_token(scope)
@@ -224,9 +267,14 @@ class Cow(object):
             files = {
                 'file': (filename, open(filename, 'rb')),
             }
-            action = '/rs-put/%s' % urlsafe_b64encode(
-                '%s:%s' % (scope, _uploaded_name(filename))
-            )
+            if use_key_as_name:
+                action = '/rs-put/%s' % urlsafe_b64encode(
+                    '%s' % (scope)
+                )
+            else:
+                action = '/rs-put/%s' % urlsafe_b64encode(
+                    '%s:%s' % (scope, _uploaded_name(filename))
+                )
             _type, _encoding = mimetypes.guess_type(filename)
             if _type:
                 action += '/mimeType/%s' % urlsafe_b64encode(_type)
@@ -236,7 +284,7 @@ class Cow(object):
             }
             res = requests.post(url, files=files, data=data)
             assert res.status_code == 200, res
-            return res.json()
+            return json.loads(res.text)
         
         if isinstance(filename, basestring):
             # 单个文件

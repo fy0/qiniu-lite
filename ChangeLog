@@ -1,7 +1,17 @@
-3013-07-01
+
+2014-03-15, updated by fy
+
+*   Version 0.1.3
+*   It can works again now (I think that).
+*   Add support to python3
+*   Now can use file's hash as filename when upload.
+
+
+2013-07-01
 
 *	Version 0.1.2
 *	Add names key words argument in put method for change uploaded file name
+
 
 2013-06-27
 
