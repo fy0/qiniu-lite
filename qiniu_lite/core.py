@@ -31,20 +31,10 @@ if sys.version > '3':
             data = bytes(data, 'utf-8')
         return str(_urlsafe_b64encode(data), 'utf-8')
 
-    from hmac import new as _hmac_new
-
-    def hmac_new(key, msg, digestmod):
-        if type(key) == 'str':
-            key = bytes(data, 'utf-8')
-            
-        if type(msg) == 'str':
-            msg = bytes(data, 'utf-8')
-        return _hmac_new('')
-
 else:
     from base64 import urlsafe_b64encode
 
-version_info = (0, 1, 2)
+version_info = (1, 0, 0)
 VERSION = __version__ = '.'.join( map(str, version_info) )
 
 
@@ -98,7 +88,11 @@ def signing(secret_key, data):
             hmac.new(secret_key, data, sha1).digest()
         )
 
-    
+
+def sign_with_data(access_key, secret_key, b):
+    data = urlsafe_b64encode(b)
+    return '%s:%s:%s' % (access_key, signing(secret_key, data), data)
+
 
 def requests_error_handler(func):
     @functools.wraps(func)
@@ -175,6 +169,9 @@ class Cow(object):
         """
         return Bucket(self, bucket)
 
+    def get_put_policy(self, scope, expires=3600):
+        """返回一个PutPolicy，这个是用于form上传文件的。"""
+        return PutPolicy(self, scope, expires)
 
     def generate_access_token(self, url, params=None):
         uri = urlparse(url)
@@ -420,4 +417,33 @@ class Bucket(object):
             for src, des in filename:
                 args.append( (self.bucket, src, self.bucket, des) )
         return args
+
+
+class PutPolicy(object):
+    scope = None             # 可以是 bucketName 或者 bucketName:key
+    expires = 3600           # 默认是 3600 秒
+
+    def __init__(self, cow, scope, expires=3600):
+        self.cow = cow
+        self.scope = scope
+        self.expires = expires
+
+    def token(self):
+        token = dict(
+            scope = self.scope,
+            deadline = int(time.time()) + self.expires,
+        )
+
+        params = ['callbackUrl', 'callbackBody', 'returnUrl', 'returnBody',
+            'endUser', 'asyncOps', 'saveKey', 'exclusive', 'detectMime',
+            'fsizeLimit', 'persistentOps', 'persistentNotifyUrl']
+
+        for i in params:
+            if hasattr(self, i):
+                token[i] = getattr(self, i)
+
+        #import json
+        #b = json.dumps(token, separators=(',',':'))
+        b = json.dumps(token)
+        return sign_with_data(self.cow.access_key, self.cow.secret_key, b)
 

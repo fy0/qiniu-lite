@@ -1,29 +1,34 @@
-from setuptools import setup
 
-def long_description():
-    try:
-        return open('README.txt').read()
-    except IOError:
-        return """Yet another qiniu cloud storeage Python SDK
-        github: https://github.com/yueyoum/seven-cow
+from distutils.core import setup
+
+def description():
+    return """A lightweight Qiniu Python SDK.
+        github: https://github.com/fy0/qiniu-lite
         """
 
-setup(
-    name = 'sevencow',
-    version = '0.1.3',
-    license = 'BSD',
-    install_requires = ['requests'],
-    py_modules = ['sevencow'],
-    author = 'Wang Chao',
-    author_email = 'yueyoum@gmail.com',
-    url = 'https://github.com/yueyoum/seven-cow',
-    description = 'Yet another qiniu cloud storage Python SDK',
-    long_description = long_description(),
-    classifiers = [
-        'Development Status :: 4 - Beta',
-        'Topic :: Internet',
+setup(name='qiniu-lite',
+      version='1.0',
+      license = 'BSD',
+      description=description(),
+      author = 'fy',
+      author_email = 'fy0@qq.com',
+      install_requires = ['requests'],
+      url="http://ichiyu.me/qiniu-lite.html",
+      packages=['qiniu_lite'],
+      classifiers = [
+        'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
+        'Topic :: Software Development :: Libraries :: Python Modules'
     ],
+
 )
+

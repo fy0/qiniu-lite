@@ -1,83 +1,91 @@
-# Seven Cow 七牛
+# qiniu-lite 七牛
 
-另一个七牛云存储Python SDK
+一个非常简单的七牛云存储 Python SDK
 
-此SDK目标是更容易的使用，完整功能的SDK请见
+对网页表单上传和本地文件操作提供支持，同时兼容py2/3。
+
+
+官方SDK在此：
+
 [![官方SDK](http://qiniutek.com/images/logo-2.png)](https://github.com/qiniu/python-sdk)
 
-## Install
+## 安装
 
 ```bash
-pip install sevencow
+pip install qiniu-lite
 ```
 
 
-## Usage
+## 使用
 
 #### 初始化
 
-在你需要的地方
+在你的项目中
 ```python
-from sevencow import Cow
+from qiniu_lite import Cow
 cow = Cow(<ACCESS_KEY>, <SECRET_KEY>)
+# 获取 bucket 对象
+bucket = cow.get_bucket(<BUCKET_NAME>)
+# 获取安全策略
+policy = cow.get_put_policy(<BUCKET_NAME>)
 ```
 
-然后就可以通过 `cow.stat(<BUCKET>, <FILENAME>)` 这样来进行操作.
-但为了简化操作，并且考虑到大多数都是在一个bucket中进行文件操作，
-所以建议再做一步：
+#### 网页表单上传
 
-```python
-b = cow.get_bucket(<BUCKET>)
+不管你使用什么web框架，请为模板传入一个值：
+``{'token': policy.token()}``
+
+随后在网页中添加一个表单，注意 {{ token }} 这个变量。
+```html
+<form method="post" action="http://upload.qiniu.com/" enctype="multipart/form-data">
+  <input name="token" type="hidden" value="{{ token }}">
+  <input name="file" type="file" />
+  <input name="accept" type="hidden" />
+  <input type="submit" />
+</form>
 ```
 
-后面都用这个`b`对象来操作。 它代表了`<BUCKET>`
+完成（绝大部分人只需要这个功能）。
 
-#### 列出所有的bucket
+
+#### 本地使用
+
 ```python
+# 列出所有的bucket
 cow.list_buckets()
+# 获取指定文件信息
+cow.stat(<BUCKET_NAME>, <FILENAME>)
+
+# 列出 bucket 的所有文件
+bucket.list_files()
+# 获取文件信息，单体/批量
+bucket.stat('a')
+bucket.stat('a', 'b', 'c')
+# 删除文件
+bucket.delete('a')
+bucket.delete('a', 'b', 'c')
+# 移动文件
+bucket.move('a', 'c')
+bucket.move(('a', 'c'), ('b', 'd'))
+# 复制文件
+bucket.copy('a', 'b')
+bucket.copy(('a', 'b'), ('c', 'd'))
+
+# 文件上传，返回值是文件信息
+bucket.put('a')
+bucket.put('a', 'b', 'c')
+
+# 需要特别注意的一点是，默认情况下put上传后，
+# 会使用文件本身哈希值(官方文件的key)作为上传后的名字，
+# 你可以使用`names`参数来指定文件上传后应该是什么名字。
+# 之所以这么做，是因为大多数时候我们不关心文件名是什么，
+# 在表单上传中尤其明显，而且必须避免重名！
+bucket.put('a', names={'a': 'x'})
+bucket.put('a', 'b', names={'a': 'x', 'b': 'y'}) # ab改名xy
+bucket.put('a', 'b', 'c', names={'c': 'z'})  # 只改变'c'的名字为'z'
+
 ```
 
-#### 列出一个bucket中的所有文件
-```python
-b.list_files()
-```
-这个方法还有 marker, limit, prefix这三个可选参数，详情参考官方文档
-
-
-#### 上传，删除，查看文件信息
-
-这三种是一类操作，因为只要提供文件名即可
-
-```python
-b.put('a')                  # 上传单个文件
-b.put('a', 'b', 'c')        # 批量上传
-b.stat('a')                 # 查看单个文件信息
-b.stat('a', 'b', 'c')       # 批量查看
-b.delete('a')               # 删除单个文件
-b.delete('a', 'b', 'c')     # 批量删除
-```
-
-默认情况下put上传会使用文件本身哈希值作为上传后的名字(也就是在bucket中的key)，
-但你也可以给put方法加一个`names`关键字参数来指定文件上传后应该是什么名字。
-
-```python
-b.put('a', names={'a': 'x'})  # 本地文件'a'，上传后的在七牛中的名字是'x'
-b.put('a', 'b', 'c', names={'a': 'x', 'b': 'y', 'c': 'z'}) # 上传后，'a','b','c'的名字分别为'x','y','z'
-b.put('a', 'b', 'c', names={'c': 'z'})  # 只改变'c'的名字为'z'，'a','b'不变
-```
-
-#### 拷贝，移动（改名）
-
-这两个操作都需要提供源文件名和目标文件名
-
-```python
-b.copy('a', 'b')                            # 将'a' 拷贝至'b'
-b.copy(('a', 'b'), ('c', 'd'), ('e', 'f'))  # 批量拷贝 'a' => 'b', 'c' => 'd', 'e' => 'f'
-b.move('a', 'b')                            # 将'a' 改名为'b'
-b.move(('a', 'b'), ('c', 'd'), ('e', 'f'))  # 批量改名 'a' => 'b', 'c' => 'd', 'e' => 'f'
-```
-
-有没有觉得比官方SDK容易使用多呢？
 
 #### 异常
 
@@ -85,8 +93,8 @@ b.move(('a', 'b'), ('c', 'd'), ('e', 'f'))  # 批量改名 'a' => 'b', 'c' => 'd
 
 所以安全的做法是这样：
 
-```
-from sevencow import CowException
+```python
+from qiniu_lite import CowException
 
 try:
     b.copy(('a', 'b'), ('c', 'd'))
@@ -96,18 +104,9 @@ except CowException as e:
     print e.content     # api 错误的原因
 ```
 
+#### 其他
 
-## 测试
+部分代码基于 seven-cow ，功能上有扩展。
 
-1.  首先从github clone项目到本地
-2.  测试需要三个环境变量
+API接口有差异，不能替代使用。
 
-    ```bash
-    export QINIU_ACCESS_KEY=<...>
-    export QINIU_SECRET_KEY=<...>
-    export QINIU_BUCKET=<...>
-    ```
-
-    `QINIU_BUCKET` 要先在web中建立
-
-3.  在项目目录中直接运行 `nosetests`
