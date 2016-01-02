@@ -23,7 +23,7 @@ setup(name='qiniu-lite',
       author = 'fy',
       author_email = 'fy0@qq.com',
       install_requires = ['requests'],
-      url="http://ichiyu.me/qiniu-lite.html",
+      url="http://fy.rpgame.net/qiniu-lite.html",
       packages=['qiniu_lite'],
       classifiers = [
         'Intended Audience :: Developers',
