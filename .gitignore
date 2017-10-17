@@ -6,6 +6,7 @@ __pycache__
 *.swp
 *.md~
 .gitignore~
+*.egg-info
 build
 dist
 MANIFEST
