@@ -24,10 +24,10 @@ pip install qiniu-lite
 ```python
 from qiniu_lite import Cow
 cow = Cow(<ACCESS_KEY>, <SECRET_KEY>)
-# 获取 bucket 对象
-bucket = cow.get_bucket(<BUCKET_NAME>)
 # 获取安全策略
 policy = cow.get_put_policy(<BUCKET_NAME>)
+# 获取 bucket 对象
+bucket = cow.get_bucket(<BUCKET_NAME>)
 ```
 
 #### 网页表单上传
@@ -99,14 +99,13 @@ from qiniu_lite import CowException
 try:
     b.copy(('a', 'b'), ('c', 'd'))
 except CowException as e:
-    print e.url         # 出错的url
-    print e.status_code # 返回码
-    print e.content     # api 错误的原因
+    print(e.url)         # 出错的url
+    print(e.status_code) # 返回码
+    print(e.content)     # api 错误的原因
 ```
 
 #### 其他
 
-部分代码基于 seven-cow ，功能上有扩展。
+部分代码基于 seven-cow 项目，功能上有扩展。
 
 API接口有差异，不能替代使用。
-
